@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import axios from "axios";
 import Link from "next/link";
 
 export default function Login() {
@@ -30,23 +31,24 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const res = await axios({
         method: "POST",
+        url: "http://localhost:3001/api/login",
+        data: formData,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      const data = await res.data;
+      console.log(data);
+      if (res.status !== 200) {
         throw new Error(data.error || "登录失败");
       }
 
       // 存储token到localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // localStorage.setItem("token", data.token);
+      // localStorage.setItem("user", JSON.stringify(data.user));
 
       setSuccess("登录成功");
       // 跳转到首页
