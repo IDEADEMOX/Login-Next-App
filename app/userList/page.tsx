@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "../utils/axios";
+import instance from "../utils/axios";
 
 export default function UserList() {
   const [users, setUsers] = useState([]);
@@ -18,7 +18,7 @@ export default function UserList() {
   // 获取用户列表
   const fetchUsers = async () => {
     try {
-      const response = await api.get("/users/list");
+      const response = await instance.get("/users/list");
 
       if (!response.ok) {
         throw new Error("获取用户列表失败");
@@ -41,7 +41,9 @@ export default function UserList() {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("http://localhost:3001/api/auth/users");
+      const response = await instance.post(
+        "http://localhost:3001/api/auth/users",
+      );
 
       if (!response.ok) {
         throw new Error("添加用户失败");
@@ -60,7 +62,7 @@ export default function UserList() {
   const handleEditUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.put(`/api/auth/users/${currentUser.id}`, {
+      const response = await instance.put(`/api/auth/users/${currentUser.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import axios from "axios";
+import instance from "../../utils/axios";
 import Link from "next/link";
 
 export default function Login() {
@@ -31,14 +31,7 @@ export default function Login() {
     }
 
     try {
-      const res = await axios({
-        method: "POST",
-        url: "http://localhost:3001/auth/login",
-        data: formData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await instance.post("/auth/login", formData);
 
       const data = await res.data;
       console.log(data);

@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import axios from "axios";
 import Link from "next/link";
-import api from "../../utils/axios";
+import instance from "../../utils/axios";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -50,9 +49,7 @@ export default function Register() {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      const res = await api.post("http://localhost:3001/api/register", {
-        body: registerData,
-      });
+      const res = await instance.post("/api/register", registerData);
 
       const data = await res.data;
 

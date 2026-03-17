@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Create axios instance
-const api = axios.create({
+const instance = axios.create({
   baseURL: "http://localhost:3001", // Base URL for API requests
   timeout: 10000, // Request timeout
   headers: {
@@ -10,7 +10,7 @@ const api = axios.create({
 });
 
 // Request interceptor
-api.interceptors.request.use(
+instance.interceptors.request.use(
   (config) => {
     return config;
   },
@@ -20,7 +20,7 @@ api.interceptors.request.use(
 );
 
 // Response interceptor
-api.interceptors.response.use(
+instance.interceptors.response.use(
   (response) => {
     // Return successful response
     return response.data;
@@ -59,4 +59,4 @@ api.interceptors.response.use(
   },
 );
 
-export default api;
+export default instance;
