@@ -23,12 +23,11 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => {
     // Return successful response
-    return response.data;
+    return response;
   },
   (error) => {
     // Handle error responses
     const { response } = error;
-    console.log(response);
 
     // Handle 401 Unauthorized - token expired or invalid
     if (response?.status === 401) {

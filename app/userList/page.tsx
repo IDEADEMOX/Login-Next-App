@@ -11,21 +11,21 @@ export default function UserList() {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [newUser, setNewUser] = useState({ name: "", email: "" });
-  const [editedUser, setEditedUser] = useState({ name: "", email: "" });
+  const [newUser, setNewUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+  const [editedUser, setEditedUser] = useState({ username: "", email: "" });
   const router = useRouter();
 
   // 获取用户列表
   const fetchUsers = async () => {
     try {
       const response = await instance.get("/users/list");
-
-      if (!response.ok) {
-        throw new Error("获取用户列表失败");
-      }
-
-      const data = await response.json();
-      setUsers(data.users || []);
+      const data = await response.data;
+      // 由于axios拦截器已经统一返回data，直接使用response.data
+      setUsers(data.data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,16 +41,13 @@ export default function UserList() {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await instance.post(
-        "http://localhost:3001/api/auth/users",
-      );
-
-      if (!response.ok) {
-        throw new Error("添加用户失败");
+      const response = await instance.post("/users/create", newUser);
+      const data = await response.data;
+      if (![200, 201].includes(response.status)) {
+        throw new Error(data.error || "用户添加失败");
       }
-
       setSuccess("用户添加成功");
-      setNewUser({ name: "", email: "" });
+      setNewUser({ username: "", email: "", password: "" });
       setIsAdding(false);
       fetchUsers();
     } catch (err) {
@@ -62,22 +59,12 @@ export default function UserList() {
   const handleEditUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await instance.put(`/api/auth/users/${currentUser.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editedUser),
-      });
-
-      if (!response.ok) {
-        throw new Error("编辑用户失败");
-      }
+      const response = await instance.post(`/users/update`, editedUser);
 
       setSuccess("用户编辑成功");
       setIsEditing(false);
       setCurrentUser(null);
-      setEditedUser({ name: "", email: "" });
+      setEditedUser({ username: "", email: "" });
       fetchUsers();
     } catch (err) {
       setError(err.message);
@@ -89,13 +76,7 @@ export default function UserList() {
     if (!confirm("确定要删除这个用户吗？")) return;
 
     try {
-      const response = await fetch(`/api/auth/users/${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("删除用户失败");
-      }
+      const response = await instance.post(`/users/delete`, { id: userId });
 
       setSuccess("用户删除成功");
       fetchUsers();
@@ -107,7 +88,7 @@ export default function UserList() {
   // 开始编辑
   const startEditing = (user) => {
     setCurrentUser(user);
-    setEditedUser({ name: user.name, email: user.email });
+    setEditedUser(user);
     setIsEditing(true);
   };
 
@@ -155,13 +136,13 @@ export default function UserList() {
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  姓名
+                  用户名
                 </label>
                 <input
                   type="text"
-                  value={newUser.name}
+                  value={newUser.username}
                   onChange={(e) =>
-                    setNewUser({ ...newUser, name: e.target.value })
+                    setNewUser({ ...newUser, username: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
                   required
@@ -179,6 +160,21 @@ export default function UserList() {
                   }
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  密码
+                </label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
+                  required
+                  minLength={6}
                 />
               </div>
               <div className="flex space-x-2">
@@ -213,9 +209,9 @@ export default function UserList() {
                 </label>
                 <input
                   type="text"
-                  value={editedUser.name}
+                  value={editedUser.username}
                   onChange={(e) =>
-                    setEditedUser({ ...editedUser, name: e.target.value })
+                    setEditedUser({ ...editedUser, username: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
                   required
@@ -247,7 +243,7 @@ export default function UserList() {
                   onClick={() => {
                     setIsEditing(false);
                     setCurrentUser(null);
-                    setEditedUser({ name: "", email: "" });
+                    setEditedUser({ username: "", email: "" });
                   }}
                   className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-zinc-200"
                 >
@@ -281,7 +277,7 @@ export default function UserList() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
-                    姓名
+                    用户名
                   </th>
                   <th
                     scope="col"
@@ -298,13 +294,13 @@ export default function UserList() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
-                {users.map((user) => (
+                {users?.map((user) => (
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white">
                       {user.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      {user.name}
+                      {user.username}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                       {user.email}
