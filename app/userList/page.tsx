@@ -16,7 +16,11 @@ export default function UserList() {
     email: "",
     password: "",
   });
-  const [editedUser, setEditedUser] = useState({ username: "", email: "" });
+  const [editedUser, setEditedUser] = useState({
+    id: 0,
+    username: "",
+    email: "",
+  });
   const router = useRouter();
 
   // 获取用户列表
@@ -59,14 +63,17 @@ export default function UserList() {
   const handleEditUser = async (e) => {
     e.preventDefault();
     try {
+      console.log("发送编辑请求:", editedUser);
       const response = await instance.post(`/users/update`, editedUser);
+      console.log("编辑响应:", response);
 
       setSuccess("用户编辑成功");
       setIsEditing(false);
       setCurrentUser(null);
-      setEditedUser({ username: "", email: "" });
+      setEditedUser({ id: 0, username: "", email: "" });
       fetchUsers();
     } catch (err) {
+      console.error("编辑错误:", err);
       setError(err.message);
     }
   };
@@ -88,7 +95,11 @@ export default function UserList() {
   // 开始编辑
   const startEditing = (user) => {
     setCurrentUser(user);
-    setEditedUser(user);
+    setEditedUser({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    });
     setIsEditing(true);
   };
 
@@ -203,6 +214,7 @@ export default function UserList() {
               编辑用户: {currentUser.name}
             </h2>
             <form onSubmit={handleEditUser} className="space-y-4">
+              <input type="hidden" value={editedUser.id} />
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   姓名
@@ -243,7 +255,7 @@ export default function UserList() {
                   onClick={() => {
                     setIsEditing(false);
                     setCurrentUser(null);
-                    setEditedUser({ username: "", email: "" });
+                    setEditedUser({ id: 0, username: "", email: "" });
                   }}
                   className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-zinc-200"
                 >
