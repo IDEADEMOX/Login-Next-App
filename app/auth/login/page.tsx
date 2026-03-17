@@ -33,7 +33,7 @@ export default function Login() {
     try {
       const res = await axios({
         method: "POST",
-        url: "http://localhost:3001/api/login",
+        url: "http://localhost:3001/auth/login",
         data: formData,
         headers: {
           "Content-Type": "application/json",

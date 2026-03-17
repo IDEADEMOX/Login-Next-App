@@ -1,45 +1,113 @@
+"use client";
 import React, { useState, useEffect } from "react";
-import { isLoggedIn, getToken } from "../utils/auth";
 import { useRouter } from "next/navigation";
+import api from "../utils/axios";
 
 export default function UserList() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [newUser, setNewUser] = useState({ name: "", email: "" });
+  const [editedUser, setEditedUser] = useState({ name: "", email: "" });
   const router = useRouter();
 
-  useEffect(() => {
-    // 检查是否已登录
-    if (!isLoggedIn()) {
-      router.push("/auth/login");
-      return;
-    }
+  // 获取用户列表
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get("/users/list");
 
-    // 获取用户列表
-    const fetchUsers = async () => {
-      try {
-        const token = getToken();
-        const response = await fetch("/api/auth/users", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("获取用户列表失败");
-        }
-
-        const data = await response.json();
-        setUsers(data.users);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("获取用户列表失败");
       }
-    };
 
+      const data = await response.json();
+      setUsers(data.users || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUsers();
   }, [router]);
+
+  // 添加用户
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post("http://localhost:3001/api/auth/users");
+
+      if (!response.ok) {
+        throw new Error("添加用户失败");
+      }
+
+      setSuccess("用户添加成功");
+      setNewUser({ name: "", email: "" });
+      setIsAdding(false);
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // 编辑用户
+  const handleEditUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.put(`/api/auth/users/${currentUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editedUser),
+      });
+
+      if (!response.ok) {
+        throw new Error("编辑用户失败");
+      }
+
+      setSuccess("用户编辑成功");
+      setIsEditing(false);
+      setCurrentUser(null);
+      setEditedUser({ name: "", email: "" });
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // 删除用户
+  const handleDeleteUser = async (userId) => {
+    if (!confirm("确定要删除这个用户吗？")) return;
+
+    try {
+      const response = await fetch(`/api/auth/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("删除用户失败");
+      }
+
+      setSuccess("用户删除成功");
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // 开始编辑
+  const startEditing = (user) => {
+    setCurrentUser(user);
+    setEditedUser({ name: user.name, email: user.email });
+    setIsEditing(true);
+  };
 
   if (loading) {
     return (
@@ -56,11 +124,135 @@ export default function UserList() {
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
             用户列表
           </h1>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+          >
+            添加用户
+          </button>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-md">
+            {success}
+          </div>
+        )}
+
+        {/* 添加用户表单 */}
+        {isAdding && (
+          <div className="bg-white dark:bg-zinc-900 shadow overflow-hidden sm:rounded-lg mb-6 p-6">
+            <h2 className="text-lg leading-6 font-medium text-zinc-900 dark:text-white mb-4">
+              添加新用户
+            </h2>
+            <form onSubmit={handleAddUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  姓名
+                </label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  邮箱
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
+                  required
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                >
+                  保存
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAdding(false)}
+                  className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-zinc-200"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 编辑用户表单 */}
+        {isEditing && currentUser && (
+          <div className="bg-white dark:bg-zinc-900 shadow overflow-hidden sm:rounded-lg mb-6 p-6">
+            <h2 className="text-lg leading-6 font-medium text-zinc-900 dark:text-white mb-4">
+              编辑用户: {currentUser.name}
+            </h2>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  姓名
+                </label>
+                <input
+                  type="text"
+                  value={editedUser.name}
+                  onChange={(e) =>
+                    setEditedUser({ ...editedUser, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  邮箱
+                </label>
+                <input
+                  type="email"
+                  value={editedUser.email}
+                  onChange={(e) =>
+                    setEditedUser({ ...editedUser, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
+                  required
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                >
+                  保存
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setCurrentUser(null);
+                    setEditedUser({ name: "", email: "" });
+                  }}
+                  className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-zinc-200"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
@@ -95,6 +287,12 @@ export default function UserList() {
                   >
                     邮箱
                   </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                  >
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -108,6 +306,20 @@ export default function UserList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                       {user.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => startEditing(user)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                      >
+                        编辑
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        删除
+                      </button>
                     </td>
                   </tr>
                 ))}

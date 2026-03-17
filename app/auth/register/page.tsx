@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import api from "../../utils/axios";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -49,13 +50,8 @@ export default function Register() {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      const res = await axios({
-        method: "POST",
-        url: "http://localhost:3001/api/register",
-        data: registerData,
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const res = await api.post("http://localhost:3001/api/register", {
+        body: registerData,
       });
 
       const data = await res.data;
