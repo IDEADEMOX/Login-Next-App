@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import instance from "../../utils/axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -39,6 +41,8 @@ export default function Login() {
         throw new Error(data.error || "登录失败");
       }
 
+      localStorage.setItem("user", JSON.stringify(data.data));
+
       // 存储token到localStorage
       // localStorage.setItem("token", data.token);
       // localStorage.setItem("user", JSON.stringify(data.user));
@@ -46,7 +50,7 @@ export default function Login() {
       setSuccess("登录成功");
       // 跳转到首页
       setTimeout(() => {
-        window.location.href = "/";
+        router.push("/");
       }, 1000);
     } catch (err) {
       setError(err.message);

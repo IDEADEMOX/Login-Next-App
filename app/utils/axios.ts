@@ -29,6 +29,8 @@ instance.interceptors.response.use(
     // Handle error responses
     const { response } = error;
 
+    localStorage.removeItem("user");
+
     // Handle 401 Unauthorized - token expired or invalid
     if (response?.status === 401) {
       // Use window.location instead of useRouter since this is a utility file
