@@ -1,78 +1,114 @@
 import axios from "axios";
 
-// Create axios instance
+// ==================== 创建 axios 实例 ====================
 const instance = axios.create({
-  baseURL: "http://localhost:3001", // Base URL for API requests
-  timeout: 10000, // Request timeout
+  baseURL: "http://localhost:3001",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor
+// ==================== Token 刷新队列管理 ====================
+let isRefreshing = false;
+let failedQueue: Array<{
+  config: any;
+  resolve: (value?: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any) => {
+  failedQueue.forEach(({ config, resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else if (config) {
+      config.headers = config.headers || {};
+      resolve(instance(config)); // 重新发起请求
+    } else {
+      reject(new Error("Token refresh failed"));
+    }
+  });
+  failedQueue = [];
+};
+
+// ==================== Request Interceptor ====================
 instance.interceptors.request.use(
   (config) => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+      } catch (e) {
+        console.error("解析 user 失败", e);
+      }
+    }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
-// Response interceptor
+// ==================== Response Interceptor ====================
 instance.interceptors.response.use(
-  (response) => {
-    // Return successful response
-    return response;
-  },
+  (response) => response,
+
   async (error) => {
-    // Handle error responses
-    const { response } = error;
+    const { response, config } = error;
+    if (!config || !response) return Promise.reject(error);
 
-    localStorage.removeItem("user");
+    // ====================== 401 处理 ======================
+    if (response.status === 401 && !config._retry) {
+      config._retry = true;
 
-    // Handle 401 Unauthorized - token expired or invalid
-    if (response?.status === 401) {
-      // Use window.location instead of useRouter since this is a utility file
-      fetch("http://localhost:3001/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.json())
-        .then((res) => {
-          if (![200, 201].includes(res.code)) {
-            // 刷新失败，跳转到登录页
-            window.location.href = "/auth/login";
-          } else {
-            // 刷新成功，更新 localStorage 中的 token
-            localStorage.setItem("user", JSON.stringify(res.data));
-          }
-        });
+      // 所有 401 都进队列
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ config, resolve, reject });
+
+        // 如果当前没有正在刷新，则开始刷新（只执行一次）
+        if (!isRefreshing) {
+          isRefreshing = true;
+
+          fetch("http://localhost:3001/auth/refresh", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then((refreshResponse) => refreshResponse.json())
+            .then((res) => {
+              if (![200, 201].includes(res.code)) {
+                throw new Error("刷新 token 失败");
+              }
+
+              const newUser = res.data;
+              localStorage.setItem("user", JSON.stringify(newUser));
+
+              // 处理队列中所有请求（包括第一个 401 接口）
+              processQueue(null);
+            })
+            .catch((err) => {
+              processQueue(err);
+              localStorage.removeItem("user");
+              window.location.href = "/auth/login";
+            })
+            .finally(() => {
+              isRefreshing = false;
+            });
+        }
+      });
     }
 
-    // Handle 400 Bad Request - validation errors or other client errors
-    if (response?.status === 400) {
-      // 刷新失败，跳转到登录页
-      window.location.href = "/auth/login";
-      // Return the error message from the server
-      return Promise.reject(
-        response.data?.message || "请求失败，请检查输入信息",
-      );
+    // ====================== 其他错误处理 ======================
+    if (response.status === 400) {
+      return Promise.reject(response.data?.message || "请求参数错误");
     }
 
-    // Handle 500 Internal Server Error
-    if (response?.status === 500) {
+    if (response.status === 500) {
       return Promise.reject("服务器内部错误，请稍后重试");
     }
 
-    // Handle network errors
     if (!response) {
       return Promise.reject("网络错误，请检查网络连接");
     }
 
-    // Handle other errors
     return Promise.reject(response.data?.message || "请求失败，请稍后重试");
   },
 );
