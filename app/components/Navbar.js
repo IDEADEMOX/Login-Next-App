@@ -71,17 +71,27 @@ export default function Navbar() {
             <Link href="/" className="text-xl font-semibold ...">
               管理系统
             </Link>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {userInfo ? (
-              <>
+            {userInfo && (
+              <div className="ml-14">
+                <Link
+                  href="/fileUpload"
+                  className="px-3 py-2 text-sm font-medium ..."
+                >
+                  文件上传
+                </Link>
                 <Link
                   href="/userList"
                   className="px-3 py-2 text-sm font-medium ..."
                 >
                   用户管理
                 </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {userInfo ? (
+              <>
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">
                   欢迎, {userInfo.username}
                 </span>

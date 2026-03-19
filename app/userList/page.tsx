@@ -46,7 +46,7 @@ export default function UserList() {
     e.preventDefault();
     try {
       const response = await instance.post("/users/create", newUser);
-      const data = await response.data;
+      const data = response.data;
       if (![200, 201].includes(response.status)) {
         throw new Error(data.error || "用户添加失败");
       }

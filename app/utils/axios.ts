@@ -42,7 +42,7 @@ instance.interceptors.request.use(
         const signatureHeaders = generateSignature(
           config.method || "GET",
           config.url,
-          config.data,
+          config.data || {},
         );
 
         // 将签名添加到请求头
@@ -75,12 +75,18 @@ instance.interceptors.response.use(
         // 如果当前没有正在刷新，则开始刷新（只执行一次）
         if (!isRefreshing) {
           isRefreshing = true;
-
+          // 防重放，生成签名
+          const signatureHeaders = generateSignature(
+            "post",
+            "/auth/refresh",
+            {},
+          );
           fetch("http://localhost:3001/auth/refresh", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-            },
+              ...signatureHeaders,
+            } as any,
           })
             .then((refreshResponse) => refreshResponse.json())
             .then((res) => {
