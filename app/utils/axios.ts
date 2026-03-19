@@ -1,4 +1,5 @@
 import axios from "axios";
+import { generateSignature } from ".";
 
 // ==================== 创建 axios 实例 ====================
 const instance = axios.create({
@@ -37,8 +38,17 @@ instance.interceptors.request.use(
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
+        // 防重放，生成签名
+        const signatureHeaders = generateSignature(
+          config.method || "GET",
+          config.url,
+          config.data,
+        );
+
+        // 将签名添加到请求头
+        Object.assign(config.headers, signatureHeaders);
       } catch (e) {
-        console.error("解析 user 失败", e);
+        console.error("解析失败", e);
       }
     }
     return config;
@@ -99,6 +109,11 @@ instance.interceptors.response.use(
     // ====================== 其他错误处理 ======================
     if (response.status === 400) {
       return Promise.reject(response.data?.message || "请求参数错误");
+    }
+
+    if (response.status === 403) {
+      window.location.href = "/auth/login";
+      return Promise.reject(response.data?.message || "权限不足");
     }
 
     if (response.status === 500) {
