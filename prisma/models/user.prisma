@@ -1,0 +1,8 @@
+model User {
+    id                  Int      @id @default(autoincrement())
+    username            String   @unique
+    password            String
+    email               String   @unique
+    refreshToken        String   @default("")
+    refreshTokenExpires DateTime @default(now())
+}
