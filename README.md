@@ -5,6 +5,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
+# 设置数据库表结构
+npx prisma migrate dev --name init
+# 生成 Prisma 客户端
+npx prisma generate
+
 npm run dev
 # or
 yarn dev
