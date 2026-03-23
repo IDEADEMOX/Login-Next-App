@@ -81,7 +81,7 @@ instance.interceptors.response.use(
             "/auth/refresh",
             {},
           );
-          fetch("http://localhost:3001/auth/refresh", {
+          fetch("/api/auth/refresh", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

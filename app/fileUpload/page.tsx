@@ -18,7 +18,7 @@ const FileUploadPage = () => {
 
       // 这里使用 axios 发送文件到后端
       // 请根据实际后端接口修改 URL
-      const response = await axios.post("/upload/uploadFile", formData, {
+      const response = await axios.post("/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

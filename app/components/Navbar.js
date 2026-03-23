@@ -7,19 +7,25 @@ import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(true); // 防止闪烁
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  // 确保只在客户端挂载后执行
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // 监听路径变化
   useEffect(() => {
+    if (!mounted) return;
+
     // 加载用户信息的函数
     const loadUser = async () => {
       try {
-        if (typeof window === "undefined") return;
-
         const userStr = getStorage("user");
-        if (!userStr) {
+        if (!userStr && pathname !== "/auth/register") {
           // 只在需要保护的页面才跳转（避免登录页也跳）
           router.push("/auth/login");
           setUserInfo(null);
@@ -31,7 +37,9 @@ export default function Navbar() {
 
         // 可选：刷新最新 profile
         if (userData?.id) {
-          const res = await axios.post(`/users/profile`, { id: userData.id });
+          const res = await axios.post(`/api/users/profile`, {
+            id: userData.id,
+          });
           if (res?.data?.data) {
             setStorage("user", JSON.stringify(res.data.data));
             setUserInfo(res.data.data);
@@ -46,11 +54,11 @@ export default function Navbar() {
     };
 
     loadUser();
-  }, [pathname, router]);
+  }, [pathname, router, mounted]);
 
   const logout = async () => {
     try {
-      await axios.post(`/auth/logout`);
+      await axios.post(`/api/auth/logout`);
     } catch (e) {
       console.error(e);
     }

@@ -26,7 +26,7 @@ export default function UserList() {
   // 获取用户列表
   const fetchUsers = async () => {
     try {
-      const response = await instance.get("/users/list");
+      const response = await instance.get("/api/users/list");
       const data = await response.data;
       // 由于axios拦截器已经统一返回data，直接使用response.data
       setUsers(data.data || []);
@@ -45,7 +45,7 @@ export default function UserList() {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await instance.post("/users/create", newUser);
+      const response = await instance.post("/api/users/create", newUser);
       const data = response.data;
       if (![200, 201].includes(response.status)) {
         throw new Error(data.error || "用户添加失败");
@@ -64,7 +64,7 @@ export default function UserList() {
     e.preventDefault();
     try {
       console.log("发送编辑请求:", editedUser);
-      const response = await instance.post(`/users/update`, editedUser);
+      const response = await instance.post(`/api/users/update`, editedUser);
       console.log("编辑响应:", response);
 
       setSuccess("用户编辑成功");
@@ -83,7 +83,7 @@ export default function UserList() {
     if (!confirm("确定要删除这个用户吗？")) return;
 
     try {
-      const response = await instance.post(`/users/delete`, { id: userId });
+      const response = await instance.post(`/api/users/delete`, { id: userId });
 
       setSuccess("用户删除成功");
       fetchUsers();

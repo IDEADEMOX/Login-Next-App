@@ -33,7 +33,7 @@ export default function Login() {
     }
 
     try {
-      const res = await instance.post("/auth/login", formData);
+      const res = await instance.post("/api/auth/login", formData);
 
       const data = await res.data;
       console.log(data);
