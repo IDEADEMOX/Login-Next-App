@@ -9,7 +9,7 @@ First, run the development server:
 npx prisma migrate dev --name init
 # 生成 Prisma 客户端
 npx prisma generate
-
+# 项目启动
 npm run dev
 # or
 yarn dev
