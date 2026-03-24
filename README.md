@@ -6,7 +6,7 @@ First, run the development server:
 
 ```bash
 # 设置数据库表结构（如果数据库表结构不存在，需要执行，否则无需执行）
-npx prisma migrate dev --name init
+npx prisma migrate dev --name [init]
 # 生成 Prisma 客户端
 npx prisma generate
 # 项目启动
