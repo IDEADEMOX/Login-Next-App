@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   });
+  cookieStore.set("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
 
   // 存储 accessToken 和 refreshToken 到数据库
   await prisma.user.update({

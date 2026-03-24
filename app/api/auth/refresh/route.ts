@@ -4,20 +4,20 @@ import { prisma } from "../../../../lib/prisma";
 import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
-  const accessToken = req.cookies.get("accessToken");
-  if (!accessToken) {
+  const refreshToken = req.cookies.get("refreshToken");
+  if (!refreshToken) {
     return NextResponse.json(
-      { error: "accessToken is required", code: 400 },
+      { error: "refreshToken is required", code: 400 },
       { status: 400 },
     );
   }
 
-  // 验证 accessToken
-  const payload = await decrypt(accessToken.value);
+  // 验证 refreshToken
+  const payload = await decrypt(refreshToken.value);
 
   if (!payload) {
     return NextResponse.json(
-      { error: "accessToken is invalid", code: 400 },
+      { error: "refreshToken is invalid", code: 400 },
       { status: 400 },
     );
   }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (user.refreshToken !== payload.refreshToken) {
+  if (user.refreshToken !== refreshToken.value) {
     return NextResponse.json(
       { error: "refreshToken is invalid", code: 400 },
       { status: 400 },
@@ -62,6 +62,12 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   // 更新 accessToken 到 cookie
   cookieStore.set("accessToken", newAccessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  // 更新 refreshToken 到 cookie
+  cookieStore.set("refreshToken", newRefreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
