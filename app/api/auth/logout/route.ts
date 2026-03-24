@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
   // 删除 accessToken cookie
   const cookieStore = await cookies();
   cookieStore.delete("accessToken");
+  cookieStore.delete("refreshToken");
 
   return NextResponse.json({ message: "退出成功", code: 200 });
 }
