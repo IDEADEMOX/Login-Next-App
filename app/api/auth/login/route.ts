@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/prisma";
 import { BcryptUtil } from "@/utils/bcrypt.util";
 import { encrypt } from "@/utils/jwt.util";
 import { cookies } from "next/headers";
+import { redis } from "../../../../lib/redis";
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
@@ -39,7 +40,10 @@ export async function POST(req: NextRequest) {
   // 生成 refreshToken
   const refreshToken = await encrypt({ userId: user.id }, "7d");
 
-  // 设置 refreshToken cookie
+  // 存储 refreshToken 到 Redis
+  await redis.set(refreshToken, refreshToken);
+
+  // 设置 accessToken cookie
   const cookieStore = await cookies();
   cookieStore.set("accessToken", accessToken, {
     httpOnly: true,

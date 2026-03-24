@@ -2,9 +2,11 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { cookies } from "next/headers";
 import { decrypt } from "@/utils/jwt.util";
+import { redis } from "../../../../lib/redis";
 
 export async function POST(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken");
+  const refreshToken = req.cookies.get("refreshToken");
 
   if (!accessToken) {
     return NextResponse.json(
@@ -22,6 +24,9 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // 删除 refreshToken 从 Redis
+  await redis.del(refreshToken.value);
 
   // 更新 refreshToken 到 null
   await prisma.user.update({
